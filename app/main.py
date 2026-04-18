@@ -62,7 +62,12 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
+        allow_origins=[
+            "https://pulseops-multi-agent-ai.vercel.app",
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:3002"
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
