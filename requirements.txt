@@ -1,0 +1,35 @@
+# Web API
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+sse-starlette==2.1.0
+
+# Queue / Redis
+celery==5.4.0
+redis==5.0.4
+kombu==5.3.5
+
+# LLM Providers
+openai==1.30.1
+groq==0.8.0
+google-generativeai==0.5.4
+
+# Async / HTTP
+httpx==0.27.0
+aiohttp==3.9.5
+anyio==4.4.0
+
+# Validation / Settings
+pydantic==2.7.1
+pydantic-settings==2.3.0
+python-dotenv==1.0.1
+
+# Utilities
+tenacity==8.3.0
+structlog==24.2.0
+orjson==3.10.3
+ulid-py==1.1.0
+
+# Testing
+pytest==8.2.2
+pytest-asyncio==0.23.7

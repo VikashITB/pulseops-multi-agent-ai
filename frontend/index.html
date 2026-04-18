@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseOps AI</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <div class="grid-bg"></div>
+  <div class="scanline"></div>
+
+  <header class="header">
+
+    <div class="logo">
+      <span class="logo-pulse"></span>
+      <span class="logo-text">
+        Pulse<em>Ops</em>
+      </span>
+      <span class="logo-badge">AI</span>
+    </div>
+
+    <div class="header-meta">
+      <span class="status-dot" id="connectionStatus"></span>
+      <span class="status-label" id="statusLabel">IDLE</span>
+    </div>
+
+  </header>
+
+  <main class="main">
+
+    <!-- Input -->
+    <section class="panel panel--input">
+
+      <div class="panel-header">
+        <span class="panel-tag">01</span>
+        <h2 class="panel-title">Task Dispatch</h2>
+        <span class="panel-subtitle">Enter your complex request</span>
+      </div>
+
+      <div class="panel-body">
+
+        <div class="textarea-wrapper">
+
+          <textarea
+            id="taskInput"
+            class="task-textarea"
+            placeholder="Example: Research AI in healthcare, analyze market trends, and create a LinkedIn post."
+          ></textarea>
+
+          <div class="textarea-corner tl"></div>
+          <div class="textarea-corner tr"></div>
+          <div class="textarea-corner bl"></div>
+          <div class="textarea-corner br"></div>
+
+        </div>
+
+        <div class="input-actions">
+
+          <div class="char-count">
+            <span id="charCount">0</span> chars
+          </div>
+
+          <button
+            class="btn-submit"
+            id="submitBtn"
+            onclick="submitTask()"
+          >
+            <span class="btn-text">DISPATCH TASK</span>
+            <span class="btn-arrow">→</span>
+            <span class="btn-loader" id="btnLoader"></span>
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Progress -->
+    <section class="panel panel--progress" id="progressPanel">
+
+      <div class="panel-header">
+        <span class="panel-tag">02</span>
+        <h2 class="panel-title">Live Stream</h2>
+        <span class="panel-subtitle" id="taskIdDisplay">
+          Awaiting dispatch...
+        </span>
+      </div>
+
+      <div class="panel-body">
+
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progressBarFill"></div>
+          <div class="progress-bar-glow" id="progressBarGlow"></div>
+        </div>
+
+        <div class="progress-log" id="progressLog">
+
+          <div class="log-placeholder">
+            <p>No active task. Dispatch one to begin.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Output -->
+    <section class="panel panel--output" id="outputPanel">
+
+      <div class="panel-header">
+        <span class="panel-tag">03</span>
+        <h2 class="panel-title">Output</h2>
+
+        <div class="panel-actions">
+
+          <button
+            class="btn-icon"
+            id="copyBtn"
+            onclick="copyOutput()"
+            style="display:none"
+            title="Copy"
+          >
+            Copy
+          </button>
+
+          <button
+            class="btn-icon"
+            id="clearBtn"
+            onclick="clearAll()"
+            style="display:none"
+            title="Clear"
+          >
+            Clear
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="panel-body">
+
+        <pre class="output-block" id="outputBlock">
+<span class="output-placeholder">Final result will appear here once task completes.</span>
+        </pre>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>PulseOps AI · FastAPI + Redis + Celery + SSE</span>
+    <span class="footer-sep">|</span>
+    <span id="footerTaskCount">0 tasks dispatched</span>
+  </footer>
+
+  <script src="script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7
+    container_name: pulseops-redis
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: pulseops-backend
+    working_dir: /project
+    volumes:
+      - .:/project
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    env_file:
+      - .env
+
+  frontend:
+    image: python:3.11
+    container_name: pulseops-frontend
+    working_dir: /project/frontend
+    volumes:
+      - .:/project
+    command: python -m http.server 3000
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
