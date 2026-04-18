@@ -153,7 +153,7 @@ class AsyncPipeline:
             )
         else:
             agent = agent_cls()
-            token_queue = asyncio.Queue(maxsize=200)
+            token_queue = asyncio.Queue(maxsize=100)
 
             drain = asyncio.create_task(
                 self.stream_tokens(step.step_id, token_queue)

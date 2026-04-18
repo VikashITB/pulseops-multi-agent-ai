@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import router
+from app.api.auth import router as auth_router
+from app.api.routes import router as main_router
 from app.core.config import settings
 from app.core.logger import configure_logging, get_logger
 
@@ -73,8 +74,13 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(
-        router,
+        main_router,
         prefix="/api/v1",
+    )
+
+    app.include_router(
+        auth_router,
+        prefix="/api/v1/auth",
     )
 
     @app.get("/", tags=["system"])

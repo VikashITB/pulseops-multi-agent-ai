@@ -17,23 +17,30 @@ logger = get_logger(__name__)
 
 
 SYSTEM_PROMPT = """
-You are a planning agent.
+You are a startup planning specialist.
 
-Convert the user request into a task plan.
+Convert the user request into a realistic execution plan.
 
 Use only these agent types:
-retriever, analyzer, writer, critic
+retriever, analyzer, writer
+
+Plan rules:
+- Keep steps to 3-4 maximum (retriever → analyzer → writer)
+- Each step should have clear, tactical description
+- Avoid generic steps like "analyze" - be specific
+- If request is tactical GTM, focus on market/competitor/pricing
+- If request is operational, focus on execution metrics
 
 Return STRICT JSON only.
 
 Schema:
 {
-  "reasoning": "brief reason",
+  "reasoning": "brief tactical rationale (2-3 sentences)",
   "steps": [
     {
       "step_id": "step-1",
       "agent_type": "retriever",
-      "description": "research the topic",
+      "description": "specific research task (e.g., 'research SaaS pricing benchmarks for $1M ARR companies')",
       "depends_on": [],
       "context_keys": [],
       "output_key": "research",
@@ -58,7 +65,7 @@ class PlannerAgent(BaseAgent):
                 system_prompt=SYSTEM_PROMPT,
                 user_prompt=step.description,
                 temperature=0.1,
-                max_tokens=1000,
+                max_tokens=600,
             )
         except Exception as exc:
             logger.warning(

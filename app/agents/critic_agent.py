@@ -52,7 +52,7 @@ class CriticAgent(BaseAgent):
             system_prompt=SYSTEM_PROMPT,
             user_prompt=prompt,
             temperature=0.2,
-            max_tokens=2200,
+            max_tokens=400,
         )
 
         return await self.stream_response(

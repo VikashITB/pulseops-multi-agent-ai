@@ -11,18 +11,22 @@ logger = get_logger(__name__)
 
 
 SYSTEM_PROMPT = """
-You are an analysis agent.
+You are a GTM and market analysis agent.
 
-Transform raw research into structured insights.
+Transform raw research into structured, actionable insights.
 
 Return:
-1. Key themes
-2. Important findings
-3. Risks or gaps
-4. Actionable takeaways
+1. Key market themes (3-5 bullets)
+2. Competitive landscape (top players, positioning)
+3. Customer segments with characteristics
+4. Pricing and monetization patterns
+5. Go-to-market channel effectiveness
+6. Risks and market gaps
+7. Actionable next steps with priorities
 
 Use markdown formatting.
-Be concise and clear.
+Be specific with numbers and data points.
+Extract concrete metrics where available.
 """
 
 
@@ -50,7 +54,7 @@ class AnalyzerAgent(BaseAgent):
             system_prompt=SYSTEM_PROMPT,
             user_prompt=prompt,
             temperature=0.25,
-            max_tokens=500,
+            max_tokens=400,
         )
 
         return await self.stream_response(
