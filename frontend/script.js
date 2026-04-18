@@ -7,16 +7,7 @@
    API BASE
 ───────────────────────────────────────── */
 
-const API_BASE = (() => {
-  if (
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
-  ) {
-    return "http://localhost:8000/api/v1";
-  }
-  if (window.PULSEOPS_API_URL) return window.PULSEOPS_API_URL;
-  return `${window.location.origin}/api/v1`;
-})();
+const API_BASE = "https://pulseops-multi-agent-ai.onrender.com/api/v1";
 
 /* ─────────────────────────────────────────
    INIT ON DOM READY
