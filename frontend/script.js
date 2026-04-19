@@ -21,7 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initAuthUI();
   initCharCounter();
   setStatus("IDLE");
-  setDot("#555");
+  setDot("#2e3f5e");
+  drawSparkline();
 });
 
 /* ─────────────────────────────────────────
@@ -39,6 +40,7 @@ const taskIdDisplay    = document.getElementById("taskIdDisplay");
 const footerTaskCount  = document.getElementById("footerTaskCount");
 const progressBarFill  = document.getElementById("progressBarFill");
 const progressBarGlow  = document.getElementById("progressBarGlow");
+const progressPct      = document.getElementById("progressPct");
 const copyBtn          = document.getElementById("copyBtn");
 const clearBtn         = document.getElementById("clearBtn");
 const exportTxtBtn     = document.getElementById("exportTxtBtn");
@@ -60,8 +62,12 @@ const navModeBadge     = document.getElementById("navModeBadge");
 ───────────────────────────────────────── */
 
 let activeEventSource = null;
-let totalTasks   = 0;
-let totalQueries = 0;
+let totalTasks    = 0;
+let totalQueries  = 0;
+let tasksDone     = 0;
+let tasksFailed   = 0;
+let taskStartTime = null;
+let totalMs       = 0;
 
 /* ─────────────────────────────────────────
    SIDEBAR
@@ -125,9 +131,9 @@ function injectModalStyles() {
     .auth-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 200;
       display: flex;
       align-items: center;
@@ -145,13 +151,13 @@ function injectModalStyles() {
     .auth-modal {
       width: 100%;
       max-width: 420px;
-      background: #0b1020;
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 22px;
-      padding: 36px 32px 32px;
-      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
-      transform: translateY(18px) scale(0.97);
-      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      background: #05080f;
+      border: 1px solid rgba(79,132,255,0.18);
+      border-radius: 24px;
+      padding: 38px 34px 34px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset;
+      transform: translateY(20px) scale(0.97);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
       position: relative;
       margin: 16px;
     }
@@ -165,11 +171,11 @@ function injectModalStyles() {
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 1px;
-      border-radius: 22px 22px 0 0;
+      border-radius: 24px 24px 0 0;
       background: linear-gradient(90deg,
         transparent,
-        rgba(79,124,255,0.45),
-        rgba(124,92,246,0.45),
+        rgba(79,132,255,0.5),
+        rgba(139,92,246,0.5),
         transparent
       );
     }
@@ -180,10 +186,10 @@ function injectModalStyles() {
       top: 16px; right: 16px;
       width: 30px; height: 30px;
       border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.07);
       background: rgba(255,255,255,0.04);
-      color: #7e94be;
-      font-size: 16px;
+      color: #5a7099;
+      font-size: 15px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -193,7 +199,7 @@ function injectModalStyles() {
       padding: 0;
     }
     .auth-modal-close:hover {
-      background: rgba(239,68,68,0.12);
+      background: rgba(239,68,68,0.1);
       color: #fca5a5;
       border-color: rgba(239,68,68,0.2);
       transform: none;
@@ -202,31 +208,31 @@ function injectModalStyles() {
 
     /* Modal header */
     .auth-modal-icon {
-      width: 46px; height: 46px;
+      width: 48px; height: 48px;
       border-radius: 14px;
-      background: linear-gradient(135deg, #4f7cff, #7c5cf6);
+      background: linear-gradient(135deg, #4f84ff, #8b5cf6);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
-      margin-bottom: 18px;
-      box-shadow: 0 4px 20px rgba(79,124,255,0.3);
+      font-size: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 24px rgba(79,132,255,0.35);
     }
     .auth-modal h2 {
       font-family: 'Syne', sans-serif;
       font-size: 22px;
       font-weight: 800;
-      color: #e8f0ff;
+      color: #edf2ff;
       margin-bottom: 4px;
-      letter-spacing: -0.4px;
+      letter-spacing: -0.5px;
     }
     .auth-modal-sub {
       font-size: 13px;
-      color: #7e94be;
-      margin-bottom: 26px;
+      color: #5a7099;
+      margin-bottom: 28px;
     }
     .auth-modal-sub a {
-      color: #7ca4ff;
+      color: #7aaeff;
       cursor: pointer;
       text-decoration: none;
       font-weight: 600;
@@ -241,29 +247,30 @@ function injectModalStyles() {
       margin-bottom: 14px;
     }
     .auth-field label {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
-      color: #7e94be;
+      color: #5a7099;
       text-transform: uppercase;
       letter-spacing: 0.07em;
     }
     .auth-field input {
       padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 11px;
+      border: 1px solid rgba(255,255,255,0.07);
       background: rgba(255,255,255,0.04);
-      color: #e8f0ff;
+      color: #edf2ff;
       font-family: 'DM Sans', sans-serif;
       font-size: 14px;
       outline: none;
-      transition: border-color 0.2s, background 0.2s;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
       width: 100%;
       box-sizing: border-box;
     }
-    .auth-field input::placeholder { color: #3a4d72; }
+    .auth-field input::placeholder { color: #2e3f5e; }
     .auth-field input:focus {
-      border-color: rgba(79,124,255,0.5);
-      background: rgba(79,124,255,0.05);
+      border-color: rgba(79,132,255,0.45);
+      background: rgba(79,132,255,0.05);
+      box-shadow: 0 0 0 3px rgba(79,132,255,0.08);
     }
     .auth-field input.error { border-color: rgba(239,68,68,0.5); }
 
@@ -274,8 +281,8 @@ function injectModalStyles() {
       gap: 7px;
       padding: 10px 14px;
       border-radius: 10px;
-      background: rgba(239,68,68,0.1);
-      border: 1px solid rgba(239,68,68,0.2);
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.18);
       color: #fca5a5;
       font-size: 13px;
       margin-bottom: 14px;
@@ -289,11 +296,11 @@ function injectModalStyles() {
       padding: 13px;
       border-radius: 12px;
       border: none;
-      background: linear-gradient(135deg, #4f7cff 0%, #7c5cf6 100%);
+      background: linear-gradient(135deg, #4f84ff 0%, #8b5cf6 100%);
       color: white;
       font-family: 'Syne', sans-serif;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
       transition: 0.25s;
       margin-top: 4px;
@@ -301,11 +308,18 @@ function injectModalStyles() {
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 20px rgba(79,124,255,0.28);
+      box-shadow: 0 4px 20px rgba(79,132,255,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+      position: relative; overflow: hidden;
+    }
+    .auth-submit::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%);
+      pointer-events: none;
     }
     .auth-submit:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 8px 28px rgba(79,124,255,0.45);
+      box-shadow: 0 10px 32px rgba(79,132,255,0.48), inset 0 1px 0 rgba(255,255,255,0.15);
     }
     .auth-submit:disabled {
       opacity: 0.6;
@@ -380,18 +394,13 @@ function injectModalHTML() {
 
   document.body.appendChild(overlay);
 
-  // Close on backdrop click
   overlay.addEventListener("click", e => {
     if (e.target === overlay) closeAuthModal();
   });
 
-  // Close button
   document.getElementById("authModalClose").addEventListener("click", closeAuthModal);
-
-  // Switch between login ↔ signup
   document.getElementById("authModalSwitch").addEventListener("click", toggleAuthMode);
 
-  // Submit on Enter key
   overlay.addEventListener("keydown", e => {
     if (e.key === "Enter") document.getElementById("authSubmitBtn").click();
     if (e.key === "Escape") closeAuthModal();
@@ -400,8 +409,6 @@ function injectModalHTML() {
 
 /* ═══════════════════════════════════════════
    AUTH — REAL BACKEND INTEGRATION
-   Replaces everything between the
-   "AUTH UI" and "CHAR COUNTER" comments
 ═══════════════════════════════════════════ */
 
 async function initAuthUI() {
@@ -413,16 +420,12 @@ async function initAuthUI() {
   if (signupBtn) signupBtn.addEventListener("click",  handleSignup);
   if (logoutBtn) logoutBtn.addEventListener("click",  handleLogout);
 
-  // Wire modal submit button
   const submitBtn = document.getElementById("authSubmitBtn");
   if (submitBtn) submitBtn.addEventListener("click", handleAuthSubmit);
 
-  // Restore session on page load
   const token = getToken();
   if (token) await restoreSession(token);
 }
-
-/* ── Open modal in correct mode ── */
 
 function handleLogin()  { openAuthModal("login");  }
 function handleSignup() { openAuthModal("signup"); }
@@ -434,8 +437,6 @@ function handleLogout() {
   showToast("Signed out", "info");
 }
 
-/* ── Modal state ── */
-
 let _authMode = "login";
 
 function openAuthModal(mode = "login") {
@@ -445,9 +446,7 @@ function openAuthModal(mode = "login") {
   const overlay = document.getElementById("authModalOverlay");
   if (overlay) {
     overlay.classList.add("open");
-    // Close on backdrop click
     overlay.onclick = e => { if (e.target === overlay) closeAuthModal(); };
-    // Close on Escape
     overlay.onkeydown = e => { if (e.key === "Escape") closeAuthModal(); };
   }
   const closeBtn = document.getElementById("authModalClose");
@@ -456,7 +455,6 @@ function openAuthModal(mode = "login") {
   const switchLink = document.getElementById("authModalSwitch");
   if (switchLink) switchLink.onclick = toggleAuthMode;
 
-  // Focus first relevant field
   setTimeout(() => {
     const first = _authMode === "signup"
       ? document.getElementById("authNameInput")
@@ -474,7 +472,6 @@ function toggleAuthMode() {
   _authMode = _authMode === "login" ? "signup" : "login";
   _applyAuthMode();
   _clearAuthForm();
-  // Re-bind switch link after innerHTML swap
   document.getElementById("authModalSwitch").onclick = toggleAuthMode;
 }
 
@@ -528,8 +525,6 @@ function _setAuthLoading(on) {
   if (label && !on) label.textContent = _authMode === "signup" ? "Create Account" : "Sign In";
 }
 
-/* ── Unified form submit ── */
-
 async function handleAuthSubmit() {
   _setAuthError(null);
 
@@ -537,7 +532,6 @@ async function handleAuthSubmit() {
   const password = document.getElementById("authPasswordInput")?.value       || "";
   const name     = document.getElementById("authNameInput")?.value.trim()   || "";
 
-  // Client-side validation
   if (!email || !password) {
     _setAuthError("Email and password are required.");
     return;
@@ -560,8 +554,6 @@ async function handleAuthSubmit() {
   _setAuthLoading(false);
 }
 
-/* ── POST /api/v1/auth/register ── */
-
 async function apiRegister(name, email, password) {
   try {
     const res  = await fetch(`${API_BASE}/auth/register`, {
@@ -583,15 +575,12 @@ async function apiRegister(name, email, password) {
     }
 
     showToast("Account created!", "success");
-    // Auto-login immediately after registration
     await apiLogin(email, password);
 
   } catch (_) {
     _setAuthError("Network error. Please try again.");
   }
 }
-
-/* ── POST /api/v1/auth/login ── */
 
 async function apiLogin(email, password) {
   try {
@@ -613,7 +602,6 @@ async function apiLogin(email, password) {
       return;
     }
 
-    // Accept common token key names from any FastAPI response shape
     const token = data.access_token || data.token || data.jwt;
     if (!token) {
       _setAuthError("Auth error: no token in response.");
@@ -622,7 +610,6 @@ async function apiLogin(email, password) {
 
     saveToken(token);
 
-    // Hydrate user from /auth/me
     const user = await fetchMe(token);
     const displayName  = user?.name || user?.full_name || email.split("@")[0];
     const displayEmail = user?.email || email;
@@ -638,12 +625,9 @@ async function apiLogin(email, password) {
   }
 }
 
-/* ── GET /api/v1/auth/me ── */
-
 async function restoreSession(token) {
   const user = await fetchMe(token);
   if (!user) {
-    // Token expired or invalid — silent cleanup
     clearToken();
     clearUser();
     return;
@@ -665,8 +649,6 @@ async function fetchMe(token) {
   }
 }
 
-/* ── Sidebar UI state ── */
-
 function showLoggedIn(name, email) {
   document.getElementById("authLoggedOut")?.classList.add("hidden");
   document.getElementById("authLoggedIn")?.classList.remove("hidden");
@@ -684,8 +666,6 @@ function showLoggedOut() {
   document.getElementById("authLoggedOut")?.classList.remove("hidden");
   document.getElementById("authLoggedIn")?.classList.add("hidden");
 }
-
-/* ── localStorage helpers ── */
 
 function saveToken(t)  { try { localStorage.setItem("pulseops_token", t);                      } catch (_) {} }
 function getToken()    { try { return localStorage.getItem("pulseops_token");                   } catch (_) { return null; } }
@@ -721,6 +701,7 @@ function setDot(color, pulse = false) {
 function setProgress(percent) {
   if (progressBarFill) progressBarFill.style.width = `${percent}%`;
   if (progressBarGlow) progressBarGlow.style.opacity = percent > 0 && percent < 100 ? "1" : "0";
+  if (progressPct) progressPct.textContent = `${percent}%`;
 }
 
 function showTyping(show = true) {
@@ -801,19 +782,153 @@ function filterHistory() {
   });
 }
 
+/* ─────────────────────────────────────────
+   SPARKLINE
+───────────────────────────────────────── */
+
+const sparklineData = [];
+
+function drawSparkline() {
+  const canvas = document.getElementById("sparklineCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  if (sparklineData.length < 2) {
+    // Draw flat baseline
+    ctx.beginPath();
+    ctx.moveTo(0, H - 2); ctx.lineTo(W, H - 2);
+    ctx.strokeStyle = "rgba(79,132,255,0.25)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    return;
+  }
+
+  const max = Math.max(...sparklineData) || 1;
+  const min = Math.min(...sparklineData);
+  const range = max - min || 1;
+  const pts = sparklineData.map((v, i) => ({
+    x: (i / (sparklineData.length - 1)) * W,
+    y: H - 3 - ((v - min) / range) * (H - 6)
+  }));
+
+  // Fill gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, "rgba(79,132,255,0.22)");
+  grad.addColorStop(1, "rgba(79,132,255,0)");
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, H);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length - 1].x, H);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = "#7aaeff";
+  ctx.lineWidth = 1.8;
+  ctx.lineJoin = "round";
+  ctx.stroke();
+
+  // End dot
+  const last = pts[pts.length - 1];
+  ctx.beginPath();
+  ctx.arc(last.x, last.y, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = "#7aaeff";
+  ctx.fill();
+}
+
+/* ─────────────────────────────────────────
+   COUNT-UP ANIMATION
+───────────────────────────────────────── */
+
+function animateCount(el, target, suffix = "", duration = 600) {
+  if (!el) return;
+  const start = parseFloat(el.dataset.current || "0") || 0;
+  if (start === target) return;
+  const startTime = performance.now();
+  function step(now) {
+    const p = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3); // ease-out-cubic
+    const val = start + (target - start) * ease;
+    el.textContent = Number.isInteger(target)
+      ? Math.round(val) + suffix
+      : val.toFixed(1) + suffix;
+    if (p < 1) requestAnimationFrame(step);
+    else { el.textContent = target + suffix; el.dataset.current = target; }
+  }
+  requestAnimationFrame(step);
+}
+
+function updateMetrics() {
+  const done  = document.getElementById("metricTasksDone");
+  const avg   = document.getElementById("metricAvgTime");
+  const rate  = document.getElementById("metricSuccessRate");
+  const trend = document.getElementById("metricSuccessTrend");
+
+  if (done) animateCount(done, tasksDone);
+
+  const attempted = tasksDone + tasksFailed;
+  if (attempted > 0 && avg) {
+    const ms = Math.round(totalMs / attempted);
+    const display = ms >= 1000 ? parseFloat((ms / 1000).toFixed(1)) : ms;
+    const suffix  = ms >= 1000 ? "s" : "ms";
+    avg.dataset.current = avg.dataset.current || "0";
+    animateCount(avg, display, suffix);
+  }
+
+  if (attempted > 0 && rate) {
+    const pct = Math.round((tasksDone / attempted) * 100);
+    animateCount(rate, pct, "%");
+    if (trend) {
+      trend.textContent = pct >= 90 ? "↑ great" : pct >= 70 ? "↑ good" : "↓ low";
+      trend.className = `metric-trend ${pct >= 70 ? "up" : "down"}`;
+    }
+  }
+
+  // Sparkline — record a data point per completed task
+  sparklineData.push(tasksDone);
+  if (sparklineData.length > 12) sparklineData.shift();
+  drawSparkline();
+}
+
+/* ─────────────────────────────────────────
+   OUTPUT SHIMMER
+───────────────────────────────────────── */
+
+function showOutputShimmer(show) {
+  const shimmer = document.getElementById("outputShimmer");
+  const output  = document.getElementById("outputBlock");
+  if (!shimmer) return;
+  shimmer.classList.toggle("visible", show);
+  if (output) output.style.opacity = show ? "0.15" : "1";
+}
+
 function failState() {
+  tasksFailed++;
+  if (taskStartTime) { totalMs += Date.now() - taskStartTime; taskStartTime = null; }
+  updateMetrics();
+  showOutputShimmer(false);
   submitBtn.disabled = false;
-  submitBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Dispatch`;
+  submitBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Dispatch Task`;
   setStatus("FAILED");
-  setDot(getComputedStyle(document.documentElement).getPropertyValue("--red").trim() || "#ef4444", false);
+  setDot("#ef4444", false);
   showTyping(false);
   clearModeBadge();
+  if (progressPct) progressPct.textContent = "0%";
 }
 
 function completeTask(result) {
+  tasksDone++;
+  if (taskStartTime) { totalMs += Date.now() - taskStartTime; taskStartTime = null; }
+  updateMetrics();
+  showOutputShimmer(false);
   outputBlock.textContent = result;
   submitBtn.disabled = false;
-  submitBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Dispatch`;
+  submitBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Dispatch Task`;
   setStatus("COMPLETED");
   setDot("#10b981", false);
   setProgress(100);
@@ -824,7 +939,7 @@ function completeTask(result) {
 }
 
 /* ─────────────────────────────────────────
-   SUBMIT TASK  (original logic — unchanged)
+   SUBMIT TASK
 ───────────────────────────────────────── */
 
 async function submitTask() {
@@ -847,10 +962,12 @@ async function submitTask() {
   setStatus("SUBMITTING");
   setDot("#f59e0b", false);
   showTyping(true);
+  showOutputShimmer(true);
   addLog("Task accepted", "success");
   showToast("Task submitted", "info");
   addSession(prompt);
   updateQueries();
+  taskStartTime = Date.now();
 
   try {
     const headers = { "Content-Type": "application/json" };
@@ -870,7 +987,6 @@ async function submitTask() {
 
     taskIdDisplay.textContent = taskId;
 
-    // Detect mode from response if available
     if (data.mode === "fast" || data.routing === "fast") setModeBadge("fast");
     else if (data.mode === "full" || data.routing === "full") setModeBadge("full");
 
@@ -883,7 +999,7 @@ async function submitTask() {
 }
 
 /* ─────────────────────────────────────────
-   STREAM  (original logic — unchanged)
+   STREAM
 ───────────────────────────────────────── */
 
 function openStream(taskId) {
@@ -959,7 +1075,7 @@ function openStream(taskId) {
 }
 
 /* ─────────────────────────────────────────
-   ACTIONS  (original logic — unchanged)
+   ACTIONS
 ───────────────────────────────────────── */
 
 function copyOutput() {
@@ -973,7 +1089,7 @@ function copyOutput() {
     copyBtn.classList.add("success");
     showToast("Copied to clipboard", "success");
     setTimeout(() => {
-      copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+      copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
       copyBtn.classList.remove("success");
     }, 2200);
   });
@@ -986,10 +1102,12 @@ function clearAll() {
   outputBlock.textContent = "Final result will appear here.";
   setProgress(0);
   setStatus("IDLE");
-  setDot("#555", false);
+  setDot("#2e3f5e", false);
   showTyping(false);
+  showOutputShimmer(false);
   clearModeBadge();
   if (taskIdDisplay) taskIdDisplay.textContent = "";
+  if (progressPct) progressPct.textContent = "0%";
 }
 
 function exportTxt() {
@@ -1023,9 +1141,9 @@ function exportPdf() {
     <head>
       <title>PulseOps Export</title>
       <style>
-        body { font-family: 'DM Sans', sans-serif; padding: 40px; line-height: 1.8; color: #1a1a2e; max-width: 800px; margin: 0 auto; }
-        h2   { font-size: 20px; margin-bottom: 24px; color: #4f7cff; }
-        pre  { white-space: pre-wrap; background: #f4f6fb; padding: 24px; border-radius: 10px; font-size: 14px; }
+        body { font-family: 'DM Sans', sans-serif; padding: 48px; line-height: 1.8; color: #1a1a2e; max-width: 800px; margin: 0 auto; }
+        h2   { font-size: 20px; margin-bottom: 24px; color: #4f84ff; font-family: 'Syne', sans-serif; }
+        pre  { white-space: pre-wrap; background: #f4f6fb; padding: 24px; border-radius: 12px; font-size: 14px; border: 1px solid #e2e8f0; }
       </style>
     </head>
     <body>
