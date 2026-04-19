@@ -79,12 +79,7 @@ class Orchestrator:
     def register(self, user_request: str) -> str:
         """Create task entry + event queue; do NOT dispatch to Celery yet."""
         task_id = ulid.new().str
-        queue: asyncio.Queue[SSEEvent] = asyncio.Queue()
-        self.tasks[task_id] = TaskEntry(
-            task_id=task_id,
-            event_queue=queue,
-            status=TaskStatus.PENDING,
-        )
+        self.tasks[task_id] = TaskEntry(task_id)
         logger.info("task_registered", task_id=task_id)
         return task_id
 
