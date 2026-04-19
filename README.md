@@ -119,7 +119,7 @@ Built for teams and developers who need AI pipelines that are **observable, retr
 
 ## Architecture
 
-![PulseOps System Architecture](docs/pulseops-architecture.png)
+![PulseOps System Architecture](docs/pulseops_architecture.png)
 
 The system is split into five layers — Client, Application, Queue, Data, and AI Agents — with three interchangeable LLM providers at the base. The FastAPI gateway accepts tasks synchronously and immediately returns a `task_id`; all heavy execution is handed off to Celery workers over Redis, keeping the API response time under 50 ms regardless of pipeline length.
 
