@@ -96,3 +96,4 @@ class SSEEvent(BaseModel):
     agent: AgentType | None = None
     data: Any = None
     message: str = ""
+    mode: str | None = None  # "fast" or "full"

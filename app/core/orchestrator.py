@@ -76,44 +76,54 @@ class Orchestrator:
     def __init__(self):
         self.tasks: dict[str, TaskEntry] = {}
 
-    def submit(self, user_request: str) -> str:
+    def register(self, user_request: str) -> str:
+        """Create task entry + event queue; do NOT dispatch to Celery yet."""
         task_id = ulid.new().str
-
-        entry = TaskEntry(task_id)
-        self.tasks[task_id] = entry
-
-        # local async execution
-        entry.background_task = asyncio.create_task(
-            self.run_task(entry, user_request)
-        )
-
-        logger.info(
-            "task_submitted",
+        queue: asyncio.Queue[SSEEvent] = asyncio.Queue()
+        self.tasks[task_id] = TaskEntry(
             task_id=task_id,
+            event_queue=queue,
+            status=TaskStatus.PENDING,
         )
+        logger.info("task_registered", task_id=task_id)
+        return task_id
 
+    def dispatch(self, task_id: str, user_request: str) -> None:
+        """Send an already-registered task straight to the Celery queue."""
+        from app.queue.tasks import run_pipeline_task
+        run_pipeline_task.delay(task_id, user_request)
+        logger.info("task_dispatched_directly", task_id=task_id)
+
+    def submit(self, user_request: str) -> str:
+        """Convenience: register + dispatch in one call (legacy path)."""
+        task_id = self.register(user_request)
+        self.dispatch(task_id, user_request)
         return task_id
 
     async def run_task(self, entry: TaskEntry, user_request: str):
         entry.status = TaskStatus.RUNNING
 
+        # Determine mode
+        mode = "fast" if is_simple_prompt(user_request) else "full"
+
         await entry.event_queue.put(
             SSEEvent(
                 event=SSEEventType.TASK_STARTED,
                 task_id=entry.task_id,
-                message="Task started"
+                message="Task started",
+                mode=mode,
             )
         )
 
         try:
             # Fast Mode: Simple prompts use direct WriterAgent
-            if is_simple_prompt(user_request):
+            if mode == "fast":
                 logger.info(
                     "routing_mode",
                     mode="FAST",
                     prompt=user_request,
                 )
-                
+
                 writer = WriterAgent()
                 step = SubTask(
                     step_id="fast-mode",
@@ -121,12 +131,12 @@ class Orchestrator:
                     description=user_request,
                     output_key="result",
                 )
-                
+
                 result = await writer.run(step, {}, None)
-                
+
                 if result.status == StepStatus.FAILED:
                     raise RuntimeError(result.error)
-                
+
                 summary = TaskSummary(
                     task_id=entry.task_id,
                     status=TaskStatus.COMPLETED,
@@ -137,7 +147,7 @@ class Orchestrator:
                     completed_at=datetime.utcnow(),
                     total_duration_ms=result.duration_ms,
                 )
-                
+
                 # Emit custom TASK_COMPLETED event for FAST mode
                 await entry.event_queue.put(
                     SSEEvent(
@@ -150,6 +160,7 @@ class Orchestrator:
                             "final_output": result.output,
                         },
                         message="Task completed",
+                        mode=mode,
                     )
                 )
             else:
@@ -159,7 +170,7 @@ class Orchestrator:
                     mode="FULL",
                     prompt=user_request,
                 )
-                
+
                 pipeline = AsyncPipeline(entry.task_id, entry.event_queue)
                 summary = await pipeline.run(user_request)
 
@@ -181,6 +192,7 @@ class Orchestrator:
                     event=SSEEventType.TASK_FAILED,
                     task_id=entry.task_id,
                     message=str(exc),
+                    mode=mode,
                 )
             )
 
@@ -190,6 +202,7 @@ class Orchestrator:
                     event=SSEEventType.TASK_COMPLETED,
                     task_id=entry.task_id,
                     message="__STREAM_END__",
+                    mode=mode,
                 )
             )
 

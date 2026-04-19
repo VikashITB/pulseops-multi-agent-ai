@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 
 import redis.asyncio as aioredis
@@ -17,10 +18,68 @@ configure_logging()
 logger = get_logger(__name__)
 
 
+async def _batch_flush_loop(redis: aioredis.Redis) -> None:
+    """
+    Background task that wakes up every BATCH_FLUSH_INTERVAL seconds and
+    dispatches whatever is sitting in the Redis buffer as a single Celery
+    batch job.  Runs for the lifetime of the FastAPI process.
+    """
+    # Late import to avoid circular imports at module load time.
+    from app.queue.tasks import process_batch_task
+    from app.services.batch_buffer import BatchBuffer
+
+    buffer = BatchBuffer(redis)
+    interval = buffer.flush_interval
+
+    logger.info(
+        "batch_flush_loop_started",
+        flush_interval_seconds=interval,
+        max_batch_size=buffer.max_batch_size,
+    )
+
+    while True:
+        await asyncio.sleep(interval)
+
+        try:
+            size = await buffer.size()
+
+            if size == 0:
+                continue
+
+            batch = await buffer.pop_batch()
+
+            if not batch:
+                continue
+
+            logger.info(
+                "periodic_batch_flush",
+                batch_size=len(batch),
+                flush_interval_seconds=interval,
+            )
+
+            process_batch_task.delay(batch)
+
+        except asyncio.CancelledError:
+            logger.info("batch_flush_loop_cancelled")
+            raise
+
+        except Exception as exc:
+            # Log and keep the loop alive — a transient Redis hiccup should
+            # not kill the flush background task permanently.
+            logger.warning(
+                "batch_flush_loop_error",
+                error=str(exc),
+                error_type=type(exc).__name__,
+            )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("starting_application")
 
+    flush_task: asyncio.Task | None = None
+
+    # ------------------------------------------------------------------ Redis
     try:
         app.state.redis = aioredis.from_url(
             settings.redis_url,
@@ -30,18 +89,30 @@ async def lifespan(app: FastAPI):
         )
 
         await app.state.redis.ping()
-
         logger.info("redis_connected")
+
+        # Start the periodic batch-flush loop only when Redis is available.
+        flush_task = asyncio.create_task(
+            _batch_flush_loop(app.state.redis),
+            name="batch_flush_loop",
+        )
+        logger.info("batch_flush_loop_task_created")
 
     except Exception as exc:
         app.state.redis = None
+        logger.warning("redis_connection_failed", error=str(exc))
 
-        logger.warning(
-            "redis_connection_failed",
-            error=str(exc),
-        )
-
+    # ----------------------------------------------------------------- yield
     yield
+
+    # --------------------------------------------------------------- shutdown
+    if flush_task is not None and not flush_task.done():
+        flush_task.cancel()
+        try:
+            await flush_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("batch_flush_loop_stopped")
 
     if app.state.redis:
         try:

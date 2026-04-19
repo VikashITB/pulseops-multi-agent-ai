@@ -57,6 +57,8 @@ Built for teams and developers who need AI pipelines that are **observable, retr
 ## Features
 
 - 🤖 **Five-stage agent pipeline** — Planner → Retriever → Analyzer → Writer → Critic
+- ⚡ **FAST MODE for simple prompts** — direct WriterAgent for instant 1-3s responses
+- 🔬 **FULL MODE for complex tasks** — multi-agent deep planning and reasoning
 - ⚡ **Real-time SSE streaming** — token-level progress updates pushed to the browser
 - 🔄 **Async task queue** — Celery + Redis decouples long-running jobs from the API
 - 🛡️ **Automatic retry handling** — tenacity-powered exponential back-off per agent
@@ -66,6 +68,37 @@ Built for teams and developers who need AI pipelines that are **observable, retr
 - 🧩 **Extensible agent registry** — add new agents with a single class + two lines of config
 - 📊 **In-memory orchestration** — lightweight task state without a heavy database
 - 🚀 **Production-ready** — Render, Railway, and Vercel deployment guides included
+
+---
+
+## Manual Batching
+
+Tasks are buffered in Redis and flushed by:
+
+- **Batch size threshold** — when buffer reaches `MAX_BATCH_SIZE` (default: 10 tasks)
+- **Timed flush interval** — periodic flush every `BATCH_FLUSH_INTERVAL` seconds (default: 5s)
+
+This reduces Celery queue pressure and groups related work for efficient processing.
+
+---
+
+## Execution Modes
+
+PulseOps automatically routes your prompts to the optimal execution mode:
+
+**⚡ FAST MODE**
+- Simple prompts (word count ≤ 10, greetings, basic questions)
+- Direct WriterAgent execution — skips Planner, Retriever, Analyzer, Critic
+- Response time: 1–3 seconds
+- Ideal for: "hello", "what is AI", "tell me a joke", quick facts
+
+**🔬 FULL MODE**
+- Complex prompts (business plans, research, comparisons, detailed reports)
+- Full five-agent pipeline: Planner → Retriever → Analyzer → Writer → Critic
+- Deep reasoning with step-by-step progress streaming
+- Ideal for: "create a business plan", "compare React vs Vue", market research
+
+The system detects prompt complexity automatically and displays the selected mode in the UI badge.
 
 ---
 

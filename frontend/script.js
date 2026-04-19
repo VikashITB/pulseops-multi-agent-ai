@@ -1015,7 +1015,9 @@ function openStream(taskId) {
     showToast("Connected to stream", "success");
   };
 
-  es.addEventListener("task_started", () => {
+  es.addEventListener("task_started", event => {
+    const payload = JSON.parse(event.data);
+    if (payload.mode) setModeBadge(payload.mode);
     addLog("Task started");
     setProgress(35);
   });
