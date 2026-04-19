@@ -57,7 +57,7 @@ When a user submits a task — such as *"Research the competitive landscape for 
 
 The system is organized into six discrete layers, each with a single well-defined responsibility:
 
-![PulseOps Architecture](pulseops-architecture.png)
+![PulseOps Architecture](pulseops_architecture.png)
 
 | Layer | Responsibility |
 |-------|---------------|
