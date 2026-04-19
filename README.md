@@ -15,7 +15,7 @@
 [![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
 [![Celery](https://img.shields.io/badge/Celery-5.x-37814A?style=for-the-badge&logo=celery&logoColor=white)](https://docs.celeryq.dev)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
-[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com)
+[![Groq](https://img.shields.io/badge/Groq-llama--3.1--8b-F55036?style=for-the-badge&logo=groq&logoColor=white)](https://groq.com)
 
 <br/>
 
@@ -73,19 +73,19 @@ Built for teams and developers who need AI pipelines that are **observable, retr
 
 **Dashboard** — live metrics, FAST / FULL mode selector, task input, and output panel side-by-side.
 
-![Dashboard](screenshots/Dashboard_png.png)
+![Dashboard](screenshots/dashboard.png)
 
 <br/>
 
 | Task Execution | Live Streaming |
 |:--------------:|:--------------:|
-| ![Task Execution](screenshots/task-execution_png.png) | ![Live Streaming](screenshots/live-streaming_png.png) |
+| ![Task Execution](screenshots/task-execution.png) | ![Live Streaming](screenshots/live-streaming.png) |
 
 <br/>
 
 **Analytics** — per-session stats, agent success rates, and response-time tracking.
 
-![Analytics](screenshots/analytics_png.png)
+![Analytics](screenshots/analytics.png)
 
 ---
 
@@ -100,9 +100,10 @@ Built for teams and developers who need AI pipelines that are **observable, retr
 - [Python-dotenv](https://pypi.org/project/python-dotenv/) — environment configuration
 
 **AI / LLM**
-- [OpenAI GPT-4o-mini](https://openai.com) — default LLM provider
-- [Groq (Llama 3 70B)](https://groq.com) — low-latency alternative
-- [Google Gemini 1.5 Flash](https://deepmind.google/gemini) — Google's multimodal option
+- Supports Groq, OpenAI, and Gemini through a unified `LLMProvider` abstraction — swap providers with a single env-var change
+- **Production provider:** [Groq](https://groq.com) running `llama-3.1-8b-instant` — chosen for its sub-second inference latency
+- [OpenAI GPT-4o-mini](https://openai.com) — drop-in alternative for highest reasoning quality
+- [Google Gemini 1.5 Flash](https://deepmind.google/gemini) — multimodal option with long context support
 
 **Frontend**
 - Vanilla HTML / CSS / JavaScript — zero-dependency, SSE-native
@@ -118,7 +119,7 @@ Built for teams and developers who need AI pipelines that are **observable, retr
 
 ## Architecture
 
-![PulseOps System Architecture](screenshots/pulseops_architecture.png)
+![PulseOps System Architecture](docs/pulseops-architecture.png)
 
 The system is split into five layers — Client, Application, Queue, Data, and AI Agents — with three interchangeable LLM providers at the base. The FastAPI gateway accepts tasks synchronously and immediately returns a `task_id`; all heavy execution is handed off to Celery workers over Redis, keeping the API response time under 50 ms regardless of pipeline length.
 
@@ -161,7 +162,8 @@ TaskRequest
 
 ```bash
 # 1. Clone the repository
-git clone <repo-url> && cd multi-agent-pipeline
+git clone https://github.com/VikashITB/pulseops-multi-agent-ai.git
+cd pulseops-multi-agent-ai
 
 # 2. Configure environment variables
 cp .env.example .env
@@ -217,11 +219,11 @@ Settings are managed by `app/core/config.py` using Pydantic and loaded from a `.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LLM_PROVIDER` | `openai` | Active provider — `openai`, `groq`, or `gemini` |
+| `LLM_PROVIDER` | `groq` | Active provider — `groq`, `openai`, or `gemini` |
 | `OPENAI_API_KEY` | — | OpenAI API key |
 | `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name |
 | `GROQ_API_KEY` | — | Groq API key |
-| `GROQ_MODEL` | `llama3-70b-8192` | Groq model name |
+| `GROQ_MODEL` | `llama-3.1-8b-instant` | Groq model name *(production default)* |
 | `GEMINI_API_KEY` | — | Google Gemini API key |
 | `GEMINI_MODEL` | `gemini-1.5-flash` | Gemini model name |
 
@@ -391,8 +393,13 @@ es.addEventListener('task_completed', (e) => {
 │   ├── index.html               # Single-page application shell
 │   ├── style.css                # Premium dark-theme styles
 │   └── script.js                # SSE client and UI logic
-├── screenshots/                 # Add UI screenshots here
+├── screenshots/
+│   ├── dashboard.png
+│   ├── task-execution.png
+│   ├── live-streaming.png
+│   └── analytics.png
 ├── docs/
+│   ├── pulseops-architecture.png
 │   ├── system_design.md
 │   └── postmortem.md
 ├── docker-compose.yml
@@ -524,6 +531,8 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ```bash
 # Fork → clone → create a feature branch
+git clone https://github.com/VikashITB/pulseops-multi-agent-ai.git
+cd pulseops-multi-agent-ai
 git checkout -b feat/my-improvement
 
 # Make changes, then
@@ -542,7 +551,7 @@ Distributed under the [MIT License](LICENSE).
 
 <div align="center">
 
-Built with ⚡ by the PulseOps team
+Built with ⚡ by [Vikas Gupta](https://github.com/VikashITB)
 
 **[⬆ Back to top](#-pulseops)**
 
