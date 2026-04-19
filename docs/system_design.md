@@ -413,4 +413,4 @@ Every design decision in PulseOps prioritises correctness, failure tolerance, an
 
 ---
 
-*Document maintained in `docs/system_design.md`. Architecture diagram at `docs/pulseops-architecture.png`.*
+*Document maintained in `docs/system_design.md`. Architecture diagram at `docs/pulseops_architecture.png`.*
