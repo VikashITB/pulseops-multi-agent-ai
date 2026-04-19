@@ -551,7 +551,7 @@ Distributed under the [MIT License](LICENSE).
 
 <div align="center">
 
-Built with ⚡ by [Vikas Gupta](https://github.com/VikashITB)
+Built with ⚡ by [Vikash Gupta](https://github.com/VikashITB)
 
 **[⬆ Back to top](#-pulseops)**
 
