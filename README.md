@@ -262,11 +262,11 @@ Settings are managed by `app/core/config.py` using Pydantic and loaded from a `.
 
 ### Infrastructure
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection string |
-| `CELERY_BROKER_URL` | `redis://localhost:6379/1` | Celery broker URL |
-| `CELERY_RESULT_BACKEND` | `redis://localhost:6379/2` | Celery result backend |
+| Variable | Development | Production | Description |
+|----------|-------------|------------|-------------|
+| `REDIS_URL` | `redis://localhost:6379/0` | `rediss://default:password@host:port` | Redis connection string (Upstash for production) |
+| `CELERY_BROKER_URL` | `redis://localhost:6379/1` | `rediss://default:password@host:port` | Celery broker URL (Upstash for production) |
+| `CELERY_RESULT_BACKEND` | `redis://localhost:6379/2` | `rediss://default:password@host:port` | Celery result backend (Upstash for production) |
 
 ### Agent Behaviour
 
