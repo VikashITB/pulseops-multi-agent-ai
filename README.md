@@ -16,6 +16,7 @@ A production-grade FastAPI application that orchestrates a chain of specialised 
 8. [Development](#development)
 9. [Testing](#testing)
 10. [Deployment](#deployment)
+11. [Documentation](#documentation)
 
 ---
 
@@ -400,3 +401,10 @@ APP_SECRET_KEY=generate-secure-random-string
 - [ ] Set up health checks
 - [ ] Configure rate limiting
 - [ ] Enable HTTPS/TLS
+
+---
+
+## Documentation
+
+- [System Design](docs/pulseops-architecture.png)
+- [Post-Mortem](docs/postmortem.md)

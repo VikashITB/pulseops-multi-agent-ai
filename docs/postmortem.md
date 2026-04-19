@@ -1,26 +1,38 @@
-# PulseOps AI — Postmortem
+# PulseOps Post-Mortem
 
----
+## Overview
+PulseOps is an agentic AI system that coordinates multiple specialized agents through an async pipeline to solve multi-step tasks.
 
-# 1. Scaling Issue Encountered
+## 1. Scaling Issue Encountered
+A major scaling challenge was handling many concurrent SSE streaming connections. Persistent streams can increase memory usage and worker load as users grow.
 
-## Problem
+### Mitigation
+- Celery workers for long-running tasks
+- Redis event communication
+- Stateless FastAPI request handling
 
-When multiple users opened live task streams simultaneously, API performance degraded.
+### Future Improvement
+Move to Redis Streams or WebSocket gateway with autoscaling workers.
 
-Each connected client required continuous progress updates, which increased Redis reads and async event-loop load.
+## 2. Design Decision I Would Change
+The current version uses in-memory task state for simplicity and speed.
 
-At higher concurrency:
+### What I Would Change
+Replace it with:
+- PostgreSQL for persistent task metadata
+- Redis Streams for events
+- Durable task/result storage
 
-- slower stream updates
-- delayed progress logs
-- occasional dropped SSE connections
+## 3. Trade-Offs Made During Development
+Redis + Celery was chosen over Kafka.
 
-## Root Cause
+### Benefits
+- Faster development
+- Easier deployment
+- Lower infrastructure complexity
 
-Initial design used periodic polling of Redis for every active stream.
+### Trade-Off
+Kafka would offer stronger replayability and larger-scale throughput.
 
-With many clients:
-
-```text
-Many Streams × Frequent Polling = Heavy Load
+## Final Reflection
+PulseOps demonstrates scalable multi-agent orchestration. Future priorities would be persistence, observability, autoscaling, and monitoring.
