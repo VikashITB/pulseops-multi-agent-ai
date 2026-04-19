@@ -1,157 +1,259 @@
-# 🤖 Multi-Agent AI Pipeline
+<div align="center">
 
-A production-grade FastAPI application that orchestrates a chain of specialised AI agents (Planner → Retriever → Analyzer → Writer → Critic) with async task execution, in-memory state management, Server-Sent Event streaming, and automatic retry handling.
+<br/>
+
+# ⚡ PulseOps
+
+### Multi-Agent AI Orchestration Platform
+
+**Coordinate chains of specialised AI agents to plan, retrieve, analyse, write, and critique — in real-time.**
+
+<br/>
+
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
+[![Celery](https://img.shields.io/badge/Celery-5.x-37814A?style=for-the-badge&logo=celery&logoColor=white)](https://docs.celeryq.dev)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com)
+
+<br/>
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000?style=flat-square)](https://github.com/astral-sh/ruff)
+
+<br/>
+
+[**🚀 Live Demo**](https://pulseops-multi-agent-ai.vercel.app/) · [**Architecture**](#architecture) · [**API Docs**](#api-reference) · [**Quick Start**](#quick-start) · [**Deployment**](#deployment)
+
+<br/>
+
+</div>
 
 ---
 
-## Table of Contents
+## What is PulseOps?
 
-1. [Architecture](#architecture)
-2. [Prerequisites](#prerequisites)
-3. [Quick Start](#quick-start)
-4. [Configuration](#configuration)
-5. [API Reference](#api-reference)
-6. [Agent Pipeline](#agent-pipeline)
-7. [Project Structure](#project-structure)
-8. [Development](#development)
-9. [Testing](#testing)
-10. [Deployment](#deployment)
-11. [Documentation](#documentation)
+PulseOps is a **production-grade AI task orchestration platform** that chains five specialised agents — Planner, Retriever, Analyzer, Writer, and Critic — into a fully automated pipeline. Each agent streams its progress in real time via Server-Sent Events, giving users live visibility into every step of a complex AI workflow.
+
+Built for teams and developers who need AI pipelines that are **observable, retryable, and scalable** — not black-box API calls.
+
+---
+
+## Why PulseOps?
+
+| Problem | How PulseOps solves it |
+|---------|------------------------|
+| LLM outputs are opaque and hard to debug | SSE streaming exposes every token and agent step in real time |
+| Single-prompt AI produces shallow results | A five-stage pipeline with specialised agents produces structured, reviewed output |
+| Long AI tasks block the user | Async Celery workers decouple execution from the HTTP request cycle |
+| Flaky LLM APIs cause silent failures | Built-in retry logic with exponential back-off across all agents |
+| Hard to swap LLM providers | Unified `LLMProvider` abstraction supports OpenAI, Groq, and Gemini behind one interface |
+| Difficult to deploy and scale | Docker Compose for development; Render, Railway, and Upstash Redis for production |
+
+---
+
+## Features
+
+- 🤖 **Five-stage agent pipeline** — Planner → Retriever → Analyzer → Writer → Critic
+- ⚡ **Real-time SSE streaming** — token-level progress updates pushed to the browser
+- 🔄 **Async task queue** — Celery + Redis decouples long-running jobs from the API
+- 🛡️ **Automatic retry handling** — tenacity-powered exponential back-off per agent
+- 🔌 **Multi-provider LLM support** — OpenAI, Groq, and Gemini behind a single interface
+- 🐳 **One-command startup** — full stack via `docker compose up --build`
+- 📡 **REST + SSE API** — clean endpoints for submission, polling, and live streaming
+- 🧩 **Extensible agent registry** — add new agents with a single class + two lines of config
+- 📊 **In-memory orchestration** — lightweight task state without a heavy database
+- 🚀 **Production-ready** — Render, Railway, and Vercel deployment guides included
+
+---
+
+## Screenshots
+
+**Dashboard** — live metrics, FAST / FULL mode selector, task input, and output panel side-by-side.
+
+![Dashboard](screenshots/Dashboard_png.png)
+
+<br/>
+
+| Task Execution | Live Streaming |
+|:--------------:|:--------------:|
+| ![Task Execution](screenshots/task-execution_png.png) | ![Live Streaming](screenshots/live-streaming_png.png) |
+
+<br/>
+
+**Analytics** — per-session stats, agent success rates, and response-time tracking.
+
+![Analytics](screenshots/analytics_png.png)
+
+---
+
+## Tech Stack
+
+**Backend**
+- [FastAPI](https://fastapi.tiangolo.com) — async API framework with automatic OpenAPI docs
+- [Celery](https://docs.celeryq.dev) — distributed task queue with Redis as broker and backend
+- [Redis](https://redis.io) — in-memory broker, result store, and SSE event bus
+- [Pydantic v2](https://docs.pydantic.dev) — data validation and settings management
+- [Tenacity](https://tenacity.readthedocs.io) — retry logic with exponential back-off
+- [Python-dotenv](https://pypi.org/project/python-dotenv/) — environment configuration
+
+**AI / LLM**
+- [OpenAI GPT-4o-mini](https://openai.com) — default LLM provider
+- [Groq (Llama 3 70B)](https://groq.com) — low-latency alternative
+- [Google Gemini 1.5 Flash](https://deepmind.google/gemini) — Google's multimodal option
+
+**Frontend**
+- Vanilla HTML / CSS / JavaScript — zero-dependency, SSE-native
+- Server-Sent Events — native browser streaming without WebSocket complexity
+
+**Infrastructure**
+- [Docker](https://docker.com) + [Docker Compose](https://docs.docker.com/compose/) — local and production containerisation
+- [Render](https://render.com) / [Railway](https://railway.app) — backend hosting
+- [Vercel](https://vercel.com) — frontend hosting
+- [Upstash Redis](https://upstash.com) — serverless Redis for production
 
 ---
 
 ## Architecture
 
-```
-┌─────────────┐  POST /task   ┌──────────────┐   enqueue   ┌──────────────┐
-│   Frontend  │ ────────────▶ │   FastAPI    │ ──────────▶ │    Celery    │
-│  index.html │               │   (routes)   │             │   Worker     │
-│             │ ◀──────────── │              │             │              │
-│             │  GET /stream  │  SSE stream  │ ◀─────────  │  Pipeline    │
-│             │  (EventSource)│  (asyncio    │  events     │  Execution   │
-└─────────────┘               │   Queue)     │             └──────────────┘
-                              └──────────────┘                     │
-                                      │                            │
-                                      ▼                            ▼
-                               ┌─────────────┐          ┌──────────────────┐
-                               │    Redis    │          │  LLM Provider    │
-                               │  (broker +  │          │  (OpenAI / etc.) │
-                               │   backend)  │          └──────────────────┘
-                               └─────────────┘
-```
+![PulseOps System Architecture](screenshots/pulseops_architecture.png)
+
+The system is split into five layers — Client, Application, Queue, Data, and AI Agents — with three interchangeable LLM providers at the base. The FastAPI gateway accepts tasks synchronously and immediately returns a `task_id`; all heavy execution is handed off to Celery workers over Redis, keeping the API response time under 50 ms regardless of pipeline length.
 
 ### Agent Pipeline
+
+Each agent is independently retryable and streams its output token-by-token via SSE.
 
 ```
 TaskRequest
     │
-    ▼
-PlannerAgent    → produces a structured execution plan (JSON steps)
+    ├─▶ PlannerAgent    — generates a structured JSON execution plan
     │
-    ▼
-RetrieverAgent  → fetches relevant documents / context (streaming)
+    ├─▶ RetrieverAgent  — fetches relevant documents and context  [streaming]
     │
-    ▼
-AnalyzerAgent   → extracts key findings from retrieved data (streaming)
+    ├─▶ AnalyzerAgent   — extracts key findings from retrieved data  [streaming]
     │
-    ▼
-WriterAgent     → synthesises a polished response / report (streaming)
+    ├─▶ WriterAgent     — synthesises a polished response or report  [streaming]
     │
-    ▼
-CriticAgent     → reviews and improves the final output (streaming)
-    │
-    ▼
-TaskSummary
+    └─▶ CriticAgent     — reviews and improves the final output  [streaming]
+            │
+            ▼
+        TaskSummary  →  { final_output, total_duration_ms, status }
 ```
 
 ---
 
 ## Prerequisites
 
-| Tool | Version |
-|------|---------|
-| Docker | ≥ 24 |
-| Docker Compose | ≥ 2.20 |
-| Python | ≥ 3.11 (local dev only) |
+| Tool | Minimum version |
+|------|----------------|
+| Docker | 24+ |
+| Docker Compose | 2.20+ |
+| Python | 3.11+ *(local dev only)* |
 
 ---
 
 ## Quick Start
 
-### With Docker Compose (recommended)
+### Docker Compose *(recommended)*
 
 ```bash
-# 1. Clone and enter the project
+# 1. Clone the repository
 git clone <repo-url> && cd multi-agent-pipeline
 
-# 2. Copy and edit environment variables
+# 2. Configure environment variables
 cp .env.example .env
-# → Set OPENAI_API_KEY (or your LLM provider key)
+# Edit .env and set your LLM API key:
+#   OPENAI_API_KEY=sk-...
+#   (or GROQ_API_KEY / GEMINI_API_KEY)
 
-# 3. Start everything
+# 3. Start the full stack
 docker compose up --build
-
-# Services:
-#   API:     http://localhost:8000
-#   Docs:    http://localhost:8000/docs
-#   Frontend: http://localhost:8000 (serves index.html)
-#   Redis:   localhost:6379
 ```
+
+| Service | URL |
+|---------|-----|
+| API + Frontend | http://localhost:8000 |
+| Interactive API docs | http://localhost:8000/docs |
+| Redis | localhost:6379 |
 
 ### Local Development
 
 ```bash
+# Create and activate virtual environment
 python -m venv .venv && source .venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 
-# Requires a running Redis instance
+# Start Redis (Docker)
 docker run -d -p 6379:6379 redis:7-alpine
 
-# Terminal 1 – API
+# Terminal 1 — API server
 uvicorn app.main:app --reload --port 8000
 
-# Terminal 2 – Celery worker
-celery -A app.queue.celery_app worker \
-  --loglevel=info --concurrency=4
+# Terminal 2 — Celery worker
+celery -A app.queue.celery_app worker --loglevel=info --concurrency=4
 ```
 
 ---
 
 ## Configuration
 
-All settings live in `app/core/config.py` and are read from environment variables (`.env` file supported via `python-dotenv`).
+Settings are managed by `app/core/config.py` using Pydantic and loaded from a `.env` file.
+
+### Core
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `APP_ENV` | `development` | Application environment |
-| `APP_HOST` | `0.0.0.0` | Application host |
-| `APP_PORT` | `8000` | Application port |
-| `LLM_PROVIDER` | `openai` | LLM provider (openai, groq, gemini) |
-| `OPENAI_API_KEY` | – | OpenAI API key |
-| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model |
-| `GROQ_API_KEY` | – | Groq API key |
-| `GROQ_MODEL` | `llama3-70b-8192` | Groq model |
-| `GEMINI_API_KEY` | – | Google Gemini API key |
-| `GEMINI_MODEL` | `gemini-1.5-flash` | Gemini model |
+| `APP_ENV` | `development` | Runtime environment |
+| `APP_HOST` | `0.0.0.0` | Server bind host |
+| `APP_PORT` | `8000` | Server bind port |
+| `CORS_ORIGINS` | `http://localhost:3000,http://localhost:8000` | Allowed CORS origins (comma-separated) |
+
+### LLM Providers
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LLM_PROVIDER` | `openai` | Active provider — `openai`, `groq`, or `gemini` |
+| `OPENAI_API_KEY` | — | OpenAI API key |
+| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name |
+| `GROQ_API_KEY` | — | Groq API key |
+| `GROQ_MODEL` | `llama3-70b-8192` | Groq model name |
+| `GEMINI_API_KEY` | — | Google Gemini API key |
+| `GEMINI_MODEL` | `gemini-1.5-flash` | Gemini model name |
+
+### Infrastructure
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis connection string |
 | `CELERY_BROKER_URL` | `redis://localhost:6379/1` | Celery broker URL |
 | `CELERY_RESULT_BACKEND` | `redis://localhost:6379/2` | Celery result backend |
-| `AGENT_MAX_RETRIES` | `3` | Maximum agent retry attempts |
-| `AGENT_RETRY_BASE_DELAY` | `1.0` | Initial retry delay (seconds) |
-| `AGENT_TIMEOUT` | `60` | Agent timeout (seconds) |
-| `MAX_BATCH_SIZE` | `10` | Maximum batch size |
-| `BATCH_FLUSH_INTERVAL` | `5.0` | Batch flush interval (seconds) |
-| `CORS_ORIGINS` | `http://localhost:3000,http://localhost:8000` | CORS allowed origins (comma-separated) |
+
+### Agent Behaviour
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AGENT_MAX_RETRIES` | `3` | Maximum retry attempts per agent |
+| `AGENT_RETRY_BASE_DELAY` | `1.0` | Initial retry delay in seconds |
+| `AGENT_TIMEOUT` | `60` | Per-agent timeout in seconds |
+| `MAX_BATCH_SIZE` | `10` | Maximum concurrent batch size |
+| `BATCH_FLUSH_INTERVAL` | `5.0` | Batch flush interval in seconds |
 
 ---
 
 ## API Reference
 
-### `POST /api/v1/task`
+### Submit a task
 
-Submit a new pipeline task. Returns immediately with a `task_id` and stream URL.
+```
+POST /api/v1/task
+```
 
-**Request body**
+**Request**
 
 ```json
 {
@@ -172,9 +274,11 @@ Submit a new pipeline task. Returns immediately with a `task_id` and stream URL.
 
 ---
 
-### `GET /api/v1/task/{task_id}`
+### Poll task status
 
-Poll the current task status and result.
+```
+GET /api/v1/task/{task_id}
+```
 
 **Response `200 OK`**
 
@@ -188,13 +292,15 @@ Poll the current task status and result.
 }
 ```
 
-Status values: `pending` | `running` | `completed` | `partial` | `failed`
+Status values: `pending` · `running` · `completed` · `partial` · `failed`
 
 ---
 
-### `GET /api/v1/tasks`
+### List all tasks
 
-List all tasks.
+```
+GET /api/v1/tasks
+```
 
 **Response `200 OK`**
 
@@ -210,34 +316,42 @@ List all tasks.
 
 ---
 
-### `GET /api/v1/stream/{task_id}`
+### Stream live events
 
-Open an SSE connection for live event streaming.
+```
+GET /api/v1/stream/{task_id}
+```
+
+Opens an SSE connection. Events are pushed as each agent starts, streams, and completes.
 
 **Event types**
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `task_started` | `{task_id, message}` | Task started |
-| `plan_ready` | `{data, message}` | Plan created |
-| `step_started` | `{step_id, agent, message}` | Agent step started |
-| `step_progress` | `{step_id, data}` | Token streaming |
-| `step_completed` | `{step_id, agent, data}` | Step completed |
-| `step_failed` | `{step_id, agent, data}` | Step failed |
-| `task_completed` | `{data, message}` | Task completed |
-| `task_failed` | `{task_id, message}` | Task failed |
+| Event | Payload fields | Description |
+|-------|---------------|-------------|
+| `task_started` | `task_id`, `message` | Pipeline has begun |
+| `plan_ready` | `data`, `message` | Planner produced a structured plan |
+| `step_started` | `step_id`, `agent`, `message` | An agent step is starting |
+| `step_progress` | `step_id`, `data.token` | Streaming token from agent output |
+| `step_completed` | `step_id`, `agent`, `data` | Agent step finished successfully |
+| `step_failed` | `step_id`, `agent`, `data` | Agent step failed (will retry) |
+| `task_completed` | `data.result`, `message` | Full pipeline completed |
+| `task_failed` | `task_id`, `message` | Pipeline failed after retries |
 
 **JavaScript example**
 
 ```javascript
 const es = new EventSource(`/api/v1/stream/${taskId}`);
-es.onmessage = (event) => {
-  const payload = JSON.parse(event.data);
-  console.log(payload.event, payload.data);
-  if (payload.event === "task_completed") {
-    es.close();
-  }
-};
+
+es.addEventListener('step_progress', (e) => {
+  const { data } = JSON.parse(e.data);
+  process.stdout.write(data.token);          // stream tokens as they arrive
+});
+
+es.addEventListener('task_completed', (e) => {
+  const { data } = JSON.parse(e.data);
+  console.log('Final output:', data.result);
+  es.close();
+});
 ```
 
 ---
@@ -247,50 +361,44 @@ es.onmessage = (event) => {
 ```
 .
 ├── app/
-│   ├── main.py                  # FastAPI app factory + lifespan
+│   ├── main.py                  # FastAPI app factory + lifespan hooks
 │   ├── api/
-│   │   ├── __init__.py
-│   │   └── routes.py            # API endpoints
+│   │   └── routes.py            # All API endpoints
 │   ├── agents/
-│   │   ├── __init__.py
-│   │   ├── base_agent.py        # Base agent interface
-│   │   ├── planner_agent.py     # Plan generation
-│   │   ├── retriever_agent.py   # Information retrieval
-│   │   ├── analyzer_agent.py    # Analysis
-│   │   ├── writer_agent.py      # Content generation
-│   │   └── critic_agent.py      # Quality review
+│   │   ├── base_agent.py        # Abstract base — all agents inherit from here
+│   │   ├── planner_agent.py     # Produces a structured JSON execution plan
+│   │   ├── retriever_agent.py   # Fetches relevant documents and context
+│   │   ├── analyzer_agent.py    # Extracts key findings from retrieved data
+│   │   ├── writer_agent.py      # Synthesises a polished final response
+│   │   └── critic_agent.py      # Reviews and improves the writer output
 │   ├── core/
-│   │   ├── __init__.py
-│   │   ├── config.py            # Pydantic settings
-│   │   ├── logger.py            # Structured logging
-│   │   ├── llm_provider.py      # LLM abstraction (OpenAI, Groq, Gemini)
-│   │   ├── pipeline.py          # Async pipeline execution
-│   │   └── orchestrator.py      # In-memory task orchestration
+│   │   ├── config.py            # Pydantic settings (env-var driven)
+│   │   ├── logger.py            # Structured JSON logging
+│   │   ├── llm_provider.py      # OpenAI / Groq / Gemini abstraction
+│   │   ├── pipeline.py          # Async sequential pipeline executor
+│   │   └── orchestrator.py      # In-memory task state management
 │   ├── models/
-│   │   ├── __init__.py
-│   │   └── schemas.py           # Pydantic models
+│   │   └── schemas.py           # Pydantic request / response models
 │   ├── queue/
-│   │   ├── __init__.py
-│   │   ├── celery_app.py        # Celery configuration
+│   │   ├── celery_app.py        # Celery configuration and app instance
 │   │   └── tasks.py             # Celery task definitions
 │   ├── services/
-│   │   ├── __init__.py
-│   │   └── streaming.py         # SSE event generator
+│   │   └── streaming.py         # SSE event generator and queue bridge
 │   └── utils/
-│       ├── __init__.py
-│       ├── retry.py             # Retry decorators (tenacity)
-│       └── helpers.py           # Utility functions
+│       ├── retry.py             # Tenacity retry decorators
+│       └── helpers.py           # Shared utility functions
 ├── frontend/
-│   ├── index.html               # Single-page UI
-│   ├── style.css                # Styling
-│   └── script.js                # JavaScript logic
+│   ├── index.html               # Single-page application shell
+│   ├── style.css                # Premium dark-theme styles
+│   └── script.js                # SSE client and UI logic
+├── screenshots/                 # Add UI screenshots here
 ├── docs/
 │   ├── system_design.md
 │   └── postmortem.md
 ├── docker-compose.yml
+├── docker-compose.prod.yml
 ├── requirements.txt
 ├── .env.example
-├── .gitignore
 └── README.md
 ```
 
@@ -298,28 +406,33 @@ es.onmessage = (event) => {
 
 ## Development
 
-### Code style
+### Code quality
 
 ```bash
+# Lint and format
 ruff check . && ruff format .
+
+# Type checking
 mypy app/
 ```
 
 ### Adding a new agent
 
-1. Create `app/agents/my_agent.py` inheriting from `BaseAgent`.
-2. Implement the `agent_type` property and `_run()` method.
-3. Register in `app/agents/__init__.py` `AGENT_REGISTRY`.
-4. Add to `AgentType` enum in `app/models/schemas.py`.
+1. Create `app/agents/my_agent.py` subclassing `BaseAgent`
+2. Implement the `agent_type` property and `_run()` async method
+3. Register it in `app/agents/__init__.py` → `AGENT_REGISTRY`
+4. Add the enum value to `AgentType` in `app/models/schemas.py`
+5. Insert the agent at the desired position in `app/core/pipeline.py`
 
 ---
 
 ## Testing
 
 ```bash
+# Unit and integration tests with coverage report
 pytest tests/ -v --cov=app --cov-report=term-missing
 
-# Integration tests (requires Docker)
+# Full integration tests (requires Docker)
 docker compose -f docker-compose.test.yml up --abort-on-container-exit
 ```
 
@@ -327,32 +440,37 @@ docker compose -f docker-compose.test.yml up --abort-on-container-exit
 
 ## Deployment
 
-### Frontend Deployment (Vercel)
+### Frontend → Vercel
 
-1. Push your code to GitHub
-2. Import project in Vercel
-3. Set root directory to `frontend`
-4. Deploy
+```bash
+# Option A — Vercel CLI
+vercel deploy
 
-The `vercel.json` config handles static file serving.
+# Option B — GitHub integration
+# 1. Push to GitHub
+# 2. Import project at vercel.com/new
+# 3. Set root directory to: frontend
+# 4. Deploy (zero config needed)
+```
 
-### Backend Deployment (Render)
+### Backend → Render
 
-1. Push your code to GitHub
-2. Create new Web Service on Render
-3. Connect your GitHub repository
-4. Build command: `pip install -r requirements.txt`
-5. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-6. Add environment variables:
-   - `APP_ENV=production`
-   - `REDIS_URL` (use Upstash Redis for production)
-   - `LLM_PROVIDER` (openai/groq/gemini)
-   - `OPENAI_API_KEY` or `GROQ_API_KEY` or `GEMINI_API_KEY`
-   - `CORS_ORIGINS=https://your-frontend.vercel.app`
+1. Create a new **Web Service** on [Render](https://render.com)
+2. Connect your GitHub repository
+3. Set build command: `pip install -r requirements.txt`
+4. Set start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. Add environment variables:
 
-### Backend Deployment (Railway)
+```env
+APP_ENV=production
+LLM_PROVIDER=groq                                 # or openai / gemini
+GROQ_API_KEY=your_key_here
+REDIS_URL=rediss://default:password@host:port      # Upstash URL
+CORS_ORIGINS=https://your-frontend.vercel.app
+APP_SECRET_KEY=generate-a-secure-random-string
+```
 
-Alternative to Render using `railway.toml`:
+### Backend → Railway
 
 ```bash
 railway login
@@ -360,51 +478,72 @@ railway init
 railway up
 ```
 
-### Redis (Upstash)
+Configure via `railway.toml` in the project root.
 
-For production, use Upstash Redis:
+### Redis → Upstash *(production)*
 
-1. Create free Redis database on Upstash
-2. Copy connection URL (format: `rediss://default:password@host:port`)
-3. Set `REDIS_URL` environment variable
+1. Create a free database at [upstash.com](https://upstash.com)
+2. Copy the `rediss://` connection URL
+3. Set it as `REDIS_URL`, `CELERY_BROKER_URL`, and `CELERY_RESULT_BACKEND`
 
-### Docker Production
+### Docker production build
 
 ```bash
-# Build and run with production config
 docker compose -f docker-compose.prod.yml up --build -d
 ```
 
-### Environment Variables
+### Production checklist
 
-Copy `.env.example` to `.env` and configure:
-
-```bash
-# Required
-LLM_PROVIDER=groq
-GROQ_API_KEY=your_key_here
-REDIS_URL=rediss://default:password@host:port
-
-# Production CORS
-CORS_ORIGINS=https://your-frontend.vercel.app,https://your-backend.render.com
-
-# Security
-APP_SECRET_KEY=generate-secure-random-string
-```
-
-### Production Checklist
-
-- [ ] Set `CORS_ORIGINS` to your actual frontend domain
-- [ ] Set `APP_SECRET_KEY` to a secure random value
-- [ ] Use Upstash Redis for production
-- [ ] Configure monitoring and logging
-- [ ] Set up health checks
-- [ ] Configure rate limiting
-- [ ] Enable HTTPS/TLS
+- [ ] `CORS_ORIGINS` set to your actual frontend domain
+- [ ] `APP_SECRET_KEY` set to a cryptographically random string
+- [ ] Upstash Redis (or equivalent) provisioned
+- [ ] Health-check endpoints configured on your host
+- [ ] Rate limiting enabled
+- [ ] HTTPS / TLS termination in place
+- [ ] Structured logging routed to an observability platform
+- [ ] Celery worker concurrency tuned for your workload
 
 ---
 
-## Documentation
+## Future Improvements
 
-- [System Design](docs/pulseops-architecture.png)
-- [Post-Mortem](docs/postmortem.md)
+- 🔐 **User authentication** — JWT-based auth with per-user task history and quotas
+- 📊 **Analytics dashboard** — pipeline latency charts, agent success rates, token usage
+- 🧠 **Agent memory** — persistent vector memory so agents recall past context across sessions
+- 🔭 **Observability** — OpenTelemetry tracing, Prometheus metrics, Grafana dashboards
+- 👥 **Team collaboration** — shared workspaces, task comments, and result annotations
+- 🔗 **Webhook callbacks** — push `task_completed` events to external systems
+- 🗄️ **Persistent storage** — PostgreSQL backend to replace in-memory orchestration
+- 🌐 **Agent marketplace** — plug-in community agents without touching core pipeline code
+
+---
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+```bash
+# Fork → clone → create a feature branch
+git checkout -b feat/my-improvement
+
+# Make changes, then
+ruff check . && pytest tests/ -v
+
+# Open a pull request
+```
+
+---
+
+## License
+
+Distributed under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+Built with ⚡ by the PulseOps team
+
+**[⬆ Back to top](#-pulseops)**
+
+</div>
