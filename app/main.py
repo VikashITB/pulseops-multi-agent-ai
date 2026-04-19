@@ -52,12 +52,14 @@ async def _batch_flush_loop(redis: aioredis.Redis) -> None:
                 continue
 
             logger.info(
-                "periodic_batch_flush",
+                "periodic_batch_flush_dispatching_tasks",
                 batch_size=len(batch),
                 flush_interval_seconds=interval,
             )
 
-            process_batch_task.delay(batch)
+            from app.core.orchestrator import orchestrator
+            for item in batch:
+                orchestrator.dispatch(item["task_id"], item["user_request"])
 
         except asyncio.CancelledError:
             logger.info("batch_flush_loop_cancelled")
@@ -91,12 +93,8 @@ async def lifespan(app: FastAPI):
         await app.state.redis.ping()
         logger.info("redis_connected")
 
-        # Start the periodic batch-flush loop only when Redis is available.
-        flush_task = asyncio.create_task(
-            _batch_flush_loop(app.state.redis),
-            name="batch_flush_loop",
-        )
-        logger.info("batch_flush_loop_task_created")
+        # Batch loop disabled - using immediate dispatch instead
+        logger.info("batch_loop_disabled_demo_mode")
 
     except Exception as exc:
         app.state.redis = None
@@ -106,13 +104,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # --------------------------------------------------------------- shutdown
-    if flush_task is not None and not flush_task.done():
-        flush_task.cancel()
-        try:
-            await flush_task
-        except asyncio.CancelledError:
-            pass
-        logger.info("batch_flush_loop_stopped")
+    # Batch loop disabled - no cleanup needed
 
     if app.state.redis:
         try:

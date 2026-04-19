@@ -84,10 +84,17 @@ class Orchestrator:
         return task_id
 
     def dispatch(self, task_id: str, user_request: str) -> None:
-        """Send an already-registered task straight to the Celery queue."""
-        from app.queue.tasks import run_pipeline_task
-        run_pipeline_task.delay(task_id, user_request)
-        logger.info("task_dispatched_directly", task_id=task_id)
+        entry = self.tasks.get(task_id)
+
+        if not entry:
+            logger.warning("task_not_found_for_dispatch", task_id=task_id)
+            return
+
+        entry.background_task = asyncio.create_task(
+            self.run_task(entry, user_request)
+        )
+
+        logger.info("task_dispatched_local_async", task_id=task_id)
 
     def submit(self, user_request: str) -> str:
         """Convenience: register + dispatch in one call (legacy path)."""
