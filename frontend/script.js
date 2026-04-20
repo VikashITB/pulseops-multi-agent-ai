@@ -3,17 +3,11 @@
 
 "use strict";
 
-/* ─────────────────────────────────────────
-   API BASE
-───────────────────────────────────────── */
-
+// API BASE
 const API_BASE = "https://pulseops-multi-agent-ai.onrender.com/api/v1";
 const BACKEND_URL = "https://pulseops-multi-agent-ai.onrender.com";
 
-/* ─────────────────────────────────────────
-   INIT ON DOM READY
-───────────────────────────────────────── */
-
+// INIT ON DOM READY
 document.addEventListener("DOMContentLoaded", () => {
   injectModalStyles();
   injectModalHTML();
@@ -27,10 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   warmBackend();
 });
 
-/* ─────────────────────────────────────────
-   BACKEND WARMUP
-───────────────────────────────────────── */
-
+// BACKEND WARMUP
 function warmBackend() {
   fetch(`${BACKEND_URL}/health`, { method: "GET" })
     .catch(() => {
@@ -38,10 +29,7 @@ function warmBackend() {
     });
 }
 
-/* ─────────────────────────────────────────
-   DOM REFERENCES
-───────────────────────────────────────── */
-
+// DOM REFERENCES
 const taskInput        = document.getElementById("taskInput");
 const submitBtn        = document.getElementById("submitBtn");
 const charCount        = document.getElementById("charCount");
@@ -70,10 +58,6 @@ const statQueries      = document.getElementById("statQueries");
 const historySearch    = document.getElementById("historySearch");
 const navModeBadge     = document.getElementById("navModeBadge");
 
-/* ─────────────────────────────────────────
-   STATE
-───────────────────────────────────────── */
-
 let activeEventSource = null;
 let totalTasks    = 0;
 let totalQueries  = 0;
@@ -81,10 +65,6 @@ let tasksDone     = 0;
 let tasksFailed   = 0;
 let taskStartTime = null;
 let totalMs       = 0;
-
-/* ─────────────────────────────────────────
-   SIDEBAR
-───────────────────────────────────────── */
 
 function initSidebar() {
   sidebarToggle.addEventListener("click", toggleSidebar);
@@ -117,10 +97,6 @@ function clearHistory() {
   showToast("History cleared", "info");
 }
 
-/* ─────────────────────────────────────────
-   CARD MOUSE TRACKING (glassmorphism glow)
-───────────────────────────────────────── */
-
 function initCardTracking() {
   document.querySelectorAll(".card").forEach(card => {
     card.addEventListener("mousemove", e => {
@@ -130,11 +106,6 @@ function initCardTracking() {
     });
   });
 }
-
-/* ═══════════════════════════════════════════
-   AUTH — MODAL INJECTION
-   (keeps index.html untouched)
-═══════════════════════════════════════════ */
 
 function injectModalStyles() {
   const style = document.createElement("style");
@@ -687,19 +658,11 @@ function saveUser(n,e) { try { localStorage.setItem("pulseops_user", JSON.string
 function getSavedUser(){ try { return JSON.parse(localStorage.getItem("pulseops_user"));        } catch (_) { return null; } }
 function clearUser()   { try { localStorage.removeItem("pulseops_user");                        } catch (_) {} }
 
-/* ─────────────────────────────────────────
-   CHAR COUNTER
-───────────────────────────────────────── */
-
 function initCharCounter() {
   taskInput.addEventListener("input", () => {
     charCount.textContent = taskInput.value.length;
   });
 }
-
-/* ─────────────────────────────────────────
-   HELPERS
-───────────────────────────────────────── */
 
 function setStatus(text) {
   if (statusLabel) statusLabel.textContent = text;
@@ -795,10 +758,6 @@ function filterHistory() {
   });
 }
 
-/* ─────────────────────────────────────────
-   SPARKLINE
-───────────────────────────────────────── */
-
 const sparklineData = [];
 
 function drawSparkline() {
@@ -854,10 +813,6 @@ function drawSparkline() {
   ctx.fill();
 }
 
-/* ─────────────────────────────────────────
-   COUNT-UP ANIMATION
-───────────────────────────────────────── */
-
 function animateCount(el, target, suffix = "", duration = 600) {
   if (!el) return;
   const start = parseFloat(el.dataset.current || "0") || 0;
@@ -908,10 +863,6 @@ function updateMetrics() {
   drawSparkline();
 }
 
-/* ─────────────────────────────────────────
-   OUTPUT SHIMMER
-───────────────────────────────────────── */
-
 function showOutputShimmer(show) {
   const shimmer = document.getElementById("outputShimmer");
   const output  = document.getElementById("outputBlock");
@@ -950,12 +901,6 @@ function completeTask(result) {
   showToast("Task completed", "success");
   setTimeout(clearModeBadge, 4000);
 }
-
-/**
- * ─────────────────────────────────────────
- *   SUBMIT TASK
- * ──────────────────────────────────────────
- */
 
 async function submitTask(retryCount = 0) {
   const prompt = taskInput.value.trim();
@@ -1023,10 +968,6 @@ async function submitTask(retryCount = 0) {
     }
   }
 }
-
-/* ─────────────────────────────────────────
-   STREAM
-───────────────────────────────────────── */
 
 function openStream(taskId) {
   let completed = false;
@@ -1101,10 +1042,6 @@ function openStream(taskId) {
     es.close();
   };
 }
-
-/* ─────────────────────────────────────────
-   ACTIONS
-───────────────────────────────────────── */
 
 function copyOutput() {
   const text = outputBlock.textContent.trim();
@@ -1184,10 +1121,6 @@ function exportPdf() {
   printWindow.print();
   showToast("PDF export dialog opened", "success");
 }
-
-/* ─────────────────────────────────────────
-   CSS KEYFRAME for spin (injected once)
-───────────────────────────────────────── */
 
 const spinStyle = document.createElement("style");
 spinStyle.textContent = "@keyframes spin { to { transform: rotate(360deg); } }";

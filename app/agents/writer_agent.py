@@ -169,27 +169,19 @@ class WriterAgent(BaseAgent):
     agent_type = AgentType.WRITER
 
     def classify_prompt(self, prompt: str) -> str:
-        """
-        Classify prompt type to determine appropriate response mode.
-
-        Returns: 'casual', 'general', 'startup_ideas', or 'business_strategy'
-        """
         prompt_lower = prompt.lower()
 
-        # Casual/social keywords
         casual_keywords = [
             'hello', 'hi', 'hey', 'how are you', 'how are you doing',
             'thanks', 'thank you', 'appreciate', 'joke', 'who are you',
             'what can you do', 'help me', 'please help', 'can you help'
         ]
 
-        # Startup ideas keywords (check BEFORE business_strategy)
         startup_ideas_keywords = [
             'idea', 'ideas', 'startup ideas', 'business ideas',
             'app ideas', 'niche ideas', 'opportunities'
         ]
 
-        # Business strategy keywords (GTM, pricing, etc.)
         business_strategy_keywords = [
             'gtm', 'go-to-market', 'go to market', 'pricing',
             'cac', 'ltv', 'pmf', 'product-market fit',
@@ -198,22 +190,18 @@ class WriterAgent(BaseAgent):
             'fundraising strategy', 'sales plan', 'unit economics'
         ]
 
-        # Check for casual/social
         for keyword in casual_keywords:
             if keyword in prompt_lower:
                 return 'casual'
 
-        # Check for startup ideas (must come before business_strategy)
         for keyword in startup_ideas_keywords:
             if keyword in prompt_lower:
                 return 'startup_ideas'
 
-        # Check for business strategy
         for keyword in business_strategy_keywords:
             if keyword in prompt_lower:
                 return 'business_strategy'
 
-        # Default to general
         return 'general'
 
     def get_system_prompt(self, prompt_type: str) -> str:

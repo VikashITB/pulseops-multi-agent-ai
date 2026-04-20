@@ -9,10 +9,6 @@ from app.queue.celery_app import celery
 logger = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Existing single-task runner (unchanged)
-# ---------------------------------------------------------------------------
-
 @celery.task(
     bind=True,
     name="app.queue.tasks.run_pipeline_task",
@@ -32,15 +28,9 @@ def run_pipeline_task(self, task_id: str, user_request: str):
         raise
 
 
-# ---------------------------------------------------------------------------
-# Batch runner — processes a list of tasks sequentially in one worker slot
-# ---------------------------------------------------------------------------
-
 @celery.task(
     bind=True,
     name="app.queue.tasks.process_batch_task",
-    # Batches should not auto-retry as a whole; individual items handle their
-    # own failures gracefully so the rest of the batch still runs.
     autoretry_for=(),
 )
 def process_batch_task(self, batch: list[dict]):
@@ -84,7 +74,6 @@ def process_batch_task(self, batch: list[dict]):
                 task_id=task_id,
                 error=str(exc),
             )
-            # Continue processing remaining items in the batch.
 
     logger.info(
         "batch_task_finished",
@@ -99,10 +88,6 @@ def process_batch_task(self, batch: list[dict]):
         "failed": failed,
     }
 
-
-# ---------------------------------------------------------------------------
-# Shared async helper (called by both tasks above)
-# ---------------------------------------------------------------------------
 
 async def execute_pipeline(task_id: str, user_request: str):
     entry = orchestrator.tasks.get(task_id)

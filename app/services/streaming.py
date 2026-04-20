@@ -8,7 +8,6 @@ from app.models.schemas import SSEEvent
 
 
 async def event_generator(queue: Queue[SSEEvent]):
-    # Immediate connection confirmation
     yield "event: connected\n"
     yield 'data: {"status":"connected"}\n\n'
 
@@ -25,6 +24,5 @@ async def event_generator(queue: Queue[SSEEvent]):
                 break
 
         except asyncio.TimeoutError:
-            # heartbeat keeps SSE alive
             yield "event: heartbeat\n"
             yield 'data: {"status":"alive"}\n\n'

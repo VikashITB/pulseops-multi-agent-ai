@@ -16,11 +16,9 @@ logger = get_logger(__name__)
 
 def is_simple_prompt(user_request: str) -> bool:
     """Detect if prompt is simple enough for Fast Mode (direct WriterAgent)."""
-    # Normalize text
     request_normalized = user_request.lower().strip()
     request_words = request_normalized.split()
     
-    # Complex prompt indicators (require Full Mode)
     complex_indicators = {
         "business plan",
         "strategy",
@@ -32,7 +30,6 @@ def is_simple_prompt(user_request: str) -> bool:
         "detailed report",
     }
     
-    # Simple prompt indicators
     simple_indicators = {
         "hello", "hi", "hey",
         "summary", "summarize",
@@ -44,21 +41,17 @@ def is_simple_prompt(user_request: str) -> bool:
         "quick", "simple", "basic",
     }
     
-    # Priority 1: If contains ANY complex indicators → Full Mode
     for indicator in complex_indicators:
         if indicator in request_normalized:
             return False
     
-    # Priority 2: If word_count <= 10 → Fast Mode
     if len(request_words) <= 10:
         return True
     
-    # Priority 3: If contains simple indicators → Fast Mode
     for indicator in simple_indicators:
         if indicator in request_normalized:
             return True
     
-    # Priority 4: Otherwise → Full Mode
     return False
 
 
@@ -104,8 +97,6 @@ class Orchestrator:
 
     async def run_task(self, entry: TaskEntry, user_request: str):
         entry.status = TaskStatus.RUNNING
-
-        # Determine mode
         mode = "fast" if is_simple_prompt(user_request) else "full"
 
         await entry.event_queue.put(
@@ -118,7 +109,6 @@ class Orchestrator:
         )
 
         try:
-            # Fast Mode: Simple prompts use direct WriterAgent
             if mode == "fast":
                 logger.info(
                     "routing_mode",
@@ -150,7 +140,6 @@ class Orchestrator:
                     total_duration_ms=result.duration_ms,
                 )
 
-                # Emit custom TASK_COMPLETED event for FAST mode
                 await entry.event_queue.put(
                     SSEEvent(
                         event=SSEEventType.TASK_COMPLETED,
@@ -166,7 +155,6 @@ class Orchestrator:
                     )
                 )
             else:
-                # Full Mode: Complex prompts use multi-agent pipeline
                 logger.info(
                     "routing_mode",
                     mode="FULL",
