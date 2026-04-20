@@ -160,9 +160,7 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["system"])
     async def health():
         return {
-            "status": "ok",
-            "redis": app.state.redis is not None,
-            "version": "1.0.0",
+            "status": "healthy"
         }
 
     @app.exception_handler(Exception)

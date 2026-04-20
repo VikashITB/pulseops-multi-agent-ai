@@ -8,6 +8,7 @@
 ───────────────────────────────────────── */
 
 const API_BASE = "https://pulseops-multi-agent-ai.onrender.com/api/v1";
+const BACKEND_URL = "https://pulseops-multi-agent-ai.onrender.com";
 
 /* ─────────────────────────────────────────
    INIT ON DOM READY
@@ -23,7 +24,19 @@ document.addEventListener("DOMContentLoaded", () => {
   setStatus("IDLE");
   setDot("#2e3f5e");
   drawSparkline();
+  warmBackend();
 });
+
+/* ─────────────────────────────────────────
+   BACKEND WARMUP
+───────────────────────────────────────── */
+
+function warmBackend() {
+  fetch(`${BACKEND_URL}/health`, { method: "GET" })
+    .catch(() => {
+      // Silently ignore errors - this is just to wake up the backend
+    });
+}
 
 /* ─────────────────────────────────────────
    DOM REFERENCES
@@ -937,12 +950,11 @@ function completeTask(result) {
   showToast("Task completed", "success");
   setTimeout(clearModeBadge, 4000);
 }
-
 /* ─────────────────────────────────────────
    SUBMIT TASK
 ───────────────────────────────────────── */
 
-async function submitTask() {
+async function submitTask(retryCount = 0) {
   const prompt = taskInput.value.trim();
   if (!prompt) return;
 
@@ -992,9 +1004,16 @@ async function submitTask() {
 
     openStream(taskId);
   } catch (error) {
-    addLog("Submission failed", "error");
-    showToast("Submission failed", "error");
-    failState();
+    if (retryCount === 0) {
+      addLog("Server is starting, retrying...", "info");
+      showToast("Server is starting, retrying...", "info");
+      await new Promise(resolve => setTimeout(resolve, 8000));
+      await submitTask(retryCount + 1);
+    } else {
+      addLog("Submission failed", "error");
+      showToast("Submission failed", "error");
+      failState();
+    }
   }
 }
 
