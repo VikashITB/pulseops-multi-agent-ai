@@ -57,7 +57,7 @@ class TaskPlan(BaseModel):
 
 
 class TaskRequest(BaseModel):
-    request: str = Field(..., min_length=5, max_length=4000)
+    request: str = Field(..., min_length=2, max_length=4000)
 
 
 class TaskResponse(BaseModel):

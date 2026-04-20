@@ -950,13 +950,20 @@ function completeTask(result) {
   showToast("Task completed", "success");
   setTimeout(clearModeBadge, 4000);
 }
-/* ─────────────────────────────────────────
-   SUBMIT TASK
-───────────────────────────────────────── */
+
+/**
+ * ─────────────────────────────────────────
+ *   SUBMIT TASK
+ * ──────────────────────────────────────────
+ */
 
 async function submitTask(retryCount = 0) {
   const prompt = taskInput.value.trim();
   if (!prompt) return;
+  if (prompt.length < 2) {
+    showToast("Please enter at least 2 characters", "error");
+    return;
+  }
 
   if (activeEventSource) activeEventSource.close();
 
