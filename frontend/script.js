@@ -977,7 +977,7 @@ async function submitTask() {
     const res = await fetch(`${API_BASE}/task`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ request: prompt })
+      body: JSON.stringify({ request: taskInput.value.trim() })
     });
 
     const data = await res.json();
